@@ -8,8 +8,6 @@ Work in progress
 """
 
 class technical_analysis_algos:
-
-
     def bollinger_bands(ticker_df, period=20, std=2):
         data = ticker_df
 
@@ -22,7 +20,10 @@ class technical_analysis_algos:
         # Calculate the Upper Bollinger Band (UB) and Lower Bollinger Band (LB)
         data['upper_band'] = data['simple_moving_ave'] + 2 * data['std']
         data['lower_band'] = data['simple_moving_ave'] - 2 * data['std']
-        return data
+
+        data['difference'] = data['upper_band'] - data['lower_band']
+
+        return data['difference'].iloc[-5:].mean()
 
     def momentum_oscillators(ticker_df):
         data = ticker_df.copy() 
@@ -31,8 +32,7 @@ class technical_analysis_algos:
         for i in range(1, len(data)):
             data.loc[data.index[i], 'momentum'] = (data['Close'].iloc[i] / data['Close'].iloc[i-1]) * 100
             # values over 100 mean price is increasing, below 100 mean they are decreasing
-        
-        return data
+        return data['momentum'].iloc[-5:].mean()
 
     def lin_reg(ticker_df, n=60):
         y = ticker_df['Close']
@@ -75,9 +75,20 @@ class technical_analysis_algos:
     # mo = momentum_oscillators(hist)
 
     # plt.plot(mo.index.values, mo['momentum'])
-    # plt.plot(mo.index.values, mo['Close'])
+    # # plt.plot(mo.index.values, mo['Close'])
     # plt.show()
 
-    log = lin_reg(hist)
+    print(bollinger_bands(hist))
+    print(momentum_oscillators(hist))
+
+    """
+    We need a way to value the bollinger, momentom, and linear regression out puts,
+    I think, we should look at the last 7 days and look at the momentom and take the highest momentom 
+    value for the past x days, look at the spread between the last n days for bollinger, and look at 
+    the highest predicted percent increase over the past x days. These 3 factors can be used to
+    determine which stock is the best pick to buy.
+
+    make a voting system between the 3 stock analysis algorithms 
+    """
 
 
