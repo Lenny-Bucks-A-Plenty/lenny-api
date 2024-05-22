@@ -1,6 +1,8 @@
 import yfinance as yf
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
+import numpy as np
+import pandas as pd
 
 
 """
@@ -34,27 +36,58 @@ class technical_analysis_algos:
             # values over 100 mean price is increasing, below 100 mean they are decreasing
         return data['momentum'].iloc[-5:].mean()
 
-    def lin_reg(ticker_df, n=60):
+    # Define the linear regression function with moving average for future predictions
+    def lin_reg(ticker_df, n=60, ma_window=5):
         y = ticker_df['Close']
         X = ticker_df[['Open', 'High', 'Low', 'Close', 'Volume']]
 
-        # for training we get all but the last values, for testing we use the last values
-        X_train, X_test, y_train, y_test = X[:-n], X[-n:], y[:-n], y[-n:] 
-        
-        model = LinearRegression()
+        # Split the data into training and testing sets
+        X_train, X_test, y_train, y_test = X[:-n], X[-n:], y[:-n], y[-n:]
 
+        # Train the linear regression model
+        model = LinearRegression()
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
 
-        plt.plot(y_test.index, y_test, label='Actual Close Price', )
-        plt.plot(y_test.index, y_pred, label='Predicted Close Price')
-        plt.legend()
-        plt.xlabel('Date')
-        plt.ylabel('Close Price')
-        plt.title('Actual vs Predicted Close Price')
-        plt.show()
+        # # Plot the actual vs predicted close prices
+        # plt.plot(y_test.index, y_test, label='Actual Close Price')
+        # plt.plot(y_test.index, y_pred, label='Predicted Close Price')
+        # plt.legend()
+        # plt.xlabel('Date')
+        # plt.ylabel('Close Price')
+        # plt.title('Actual vs Predicted Close Price')
+        # plt.show()
 
-        return y_pred
+        # Calculate the moving average of the close prices
+        ticker_df['Moving_Avg'] = ticker_df['Close'].rolling(window=ma_window).mean()
+
+        # Predict the next 5 days using the moving average
+        future_predictions = []
+        last_known_data = ticker_df.iloc[-1].copy()  
+
+        for _ in range(5):
+            ma_close = ticker_df['Moving_Avg'].iloc[-ma_window:].mean()
+            future_predictions.append(ma_close)
+
+            # Simulate the next day's input data
+            next_day_data = pd.DataFrame({
+                'Open': [ma_close],
+                'High': [ma_close],
+                'Low': [ma_close],
+                'Close': [ma_close],
+                'Volume': [last_known_data['Volume']]  # Keep the volume the same as the previous day (or modify as needed)
+            }, index=[ticker_df.index[-1] + pd.Timedelta(days=1)])
+
+            # Append the simulated data to the DataFrame to maintain continuity
+            ticker_df = pd.concat([ticker_df, next_day_data])
+            ticker_df['Moving_Avg'] = ticker_df['Close'].rolling(window=ma_window).mean()
+            last_known_data = ticker_df.iloc[-1]
+
+        # Create a DataFrame for the future predictions
+        future_dates = pd.date_range(start=ticker_df.index[-1] + pd.Timedelta(days=1), periods=5, freq='B')
+        future_df = pd.DataFrame(data=future_predictions, index=future_dates, columns=['Predicted Close Price'])
+
+        return future_df
 
     msft = yf.Ticker("MSFT")
 
@@ -78,8 +111,10 @@ class technical_analysis_algos:
     # # plt.plot(mo.index.values, mo['Close'])
     # plt.show()
 
-    print(bollinger_bands(hist))
-    print(momentum_oscillators(hist))
+    # print(bollinger_bands(hist))
+    # print(momentum_oscillators(hist))
+    print(lin_reg(hist))
+    # print(hist['Close'].iloc[-5:])
 
     """
     We need a way to value the bollinger, momentom, and linear regression out puts,
