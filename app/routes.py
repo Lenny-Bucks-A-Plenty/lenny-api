@@ -1,7 +1,6 @@
-from app import api
-
-import pandas as pd
-import yfinance as yf
+from app import api, db_engine
+from app.database import SP500DataTable
+from sqlmodel import Session, select
 
 @api.get('/')
 def index():
@@ -13,7 +12,7 @@ def ping():
 
 @api.get('/sp500')
 def sp500():
-    tickerTable = pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')[0]
-    print(tickerTable.head())
-    tickersAndNames = tickerTable.loc[:, ["Symbol", "Security"]]
-    return tickersAndNames.to_dict(orient="records")
+    with Session(db_engine) as session:
+        statement = select(SP500DataTable)
+        results = session.exec(statement).all()
+        return results
