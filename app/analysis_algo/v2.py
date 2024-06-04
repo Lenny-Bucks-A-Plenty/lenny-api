@@ -30,13 +30,15 @@ def determine_bollinger_signal(data: DataFrame):
     upper_band = latest_data["upper_band"]
     lower_band = latest_data["lower_band"]
 
+    diff = (upper_band - close_price) * .3
+
     # Determine the signal
     if close_price > upper_band:
-        return "Sell"
+        return ("Sell", diff)
     elif close_price < lower_band:
-        return "Buy"
+        return ("Buy", diff)
     else:
-        return "Wait"
+        return ("Wait", diff)
 
 
 def momentum_oscillators(ticker_df: DataFrame):
@@ -52,13 +54,15 @@ def determine_momentum_signal(data: DataFrame):
     latest_data = data.iloc[-1]
     momentum = latest_data["momentum"]
 
+    diff = momentum * .3
+
     # Determine the signal based on momentum
     if momentum > 0:
-        return "Buy"
+        return ("Buy", diff)
     elif momentum < 0:
-        return "Sell"
+        return ("Sell", diff)
     else:
-        return "Wait"
+        return ("Wait", diff)
 
 
 # Define the linear regression function with moving average for future predictions
@@ -107,10 +111,54 @@ def lin_reg(ticker_df, n=60, ma_window=5):
 
 
 def determine_linear_reg_signal(predictions: list):
+    diff = (predictions[-1] - predictions[0]) * .4
     if predictions[-1] > predictions[0]:
-        return "Buy"
+        return ("Buy", diff[0])
     else:
-        return "Sell"
+        return ("Sell", diff[0])
+    
+
+def do_shit(ticker: str):
+    msft = yf.Ticker(ticker)
+
+    # Get historical market data
+    hist = msft.history(period="6mo", interval="1d")
+
+    # Calculate Bollinger Bands
+    bollinger_data = calculate_bollinger_bands(hist)
+    bollinger_signal = determine_bollinger_signal(bollinger_data)
+
+    # Calculate Momentum Oscillators
+    momentum_data = momentum_oscillators(hist)
+    momentum_signal = determine_momentum_signal(momentum_data)
+
+    # Linear Regression Prediction
+    lin_reg_pred = lin_reg(hist)
+    lin_reg_signal = determine_linear_reg_signal(lin_reg_pred)
+
+    # Print signals and data
+    print(f"Bollinger Bands Signal: {bollinger_signal}")
+    print(f"Momentum Signal: {momentum_signal}")
+    print(f"Linear Regression Signal: {lin_reg_signal}")
+    print(f"Bollinger Bands Data:\n{bollinger_data.tail()}")
+    print(f"Momentum Data:\n{momentum_data.tail()}")
+
+    # Determine overall recommendation based on all signals
+    signals = [bollinger_signal[0], momentum_signal[0], lin_reg_signal[0]]
+    buy_count = signals.count("Buy")
+    sell_count = signals.count("Sell")
+
+    confidence = bollinger_signal[1] + momentum_signal[1] + lin_reg_signal[1]
+
+    if buy_count > sell_count:
+        recommendation = ("Buy", confidence)
+    elif sell_count > buy_count:
+        recommendation = ("Sell", confidence)
+    else:
+        recommendation = ("Wait", confidence)
+
+    print(f"\nOverall Recommendation: {recommendation}")
+    return recommendation
 
 
 def main():
@@ -143,14 +191,17 @@ def main():
     buy_count = signals.count("Buy")
     sell_count = signals.count("Sell")
 
+    confidence = bollinger_signal[1] + momentum_signal[1] + lin_reg_signal[1]
+
     if buy_count > sell_count:
-        recommendation = "Buy"
+        recommendation = ("Buy", confidence)
     elif sell_count > buy_count:
-        recommendation = "Sell"
+        recommendation = ("Sell", confidence)
     else:
-        recommendation = "Wait"
+        recommendation = ("Wait", confidence)
 
     print(f"\nOverall Recommendation: {recommendation}")
+    return recommendation
 
 
 if __name__ == "__main__":

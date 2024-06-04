@@ -1,5 +1,6 @@
 from app import api, db_engine
 from app.database import SP500DataTable
+from app.analysis_algo.v2 import do_shit
 from sqlmodel import Session, select
 
 @api.get('/')
@@ -16,3 +17,8 @@ def sp500():
         statement = select(SP500DataTable)
         results = session.exec(statement).all()
         return results
+    
+@api.get('/take')
+def getLennyTake(ticker: str):
+    res = do_shit(ticker=ticker)
+    return res
