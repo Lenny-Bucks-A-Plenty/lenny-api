@@ -25,7 +25,7 @@ async def onStartup(app: FastAPI):
     database.create_tables()
     # if not isDev:
     #     await refresh_sp500_task()
-    # await refresh_sp500_task()
+    await refresh_sp500_task()
     yield
 
 #? API SETUP

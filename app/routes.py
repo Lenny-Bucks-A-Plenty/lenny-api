@@ -32,5 +32,4 @@ def getStockGraph(ticker: str):
     res = []
     for idx, row in df.iterrows():
         res.append({'timestamp': str(idx), 'price': row['Close']})
-
     return res
