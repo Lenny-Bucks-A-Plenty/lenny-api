@@ -116,7 +116,7 @@ def determine_linear_reg_signal(predictions: list):
         return ("Sell", diff[0])
     
 
-def do_shit(ticker: str):
+def run_algo(ticker: str):
     msft = yf.Ticker(ticker)
 
     # Get historical market data
@@ -160,7 +160,7 @@ def do_shit(ticker: str):
 
 
 def main():
-    do_shit("MSFT")
+    run_algo("MSFT")
 
 
 if __name__ == "__main__":
